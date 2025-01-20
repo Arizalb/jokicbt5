@@ -5,6 +5,21 @@ const User = require("../models/User");
 exports.register = async (req, res) => {
   try {
     const { username, email, password, role } = req.body;
+
+    // Check if username or email already exists
+    const existingUser = await User.findOne({
+      $or: [{ username: username }, { email: email }],
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        message:
+          existingUser.username === username
+            ? "Username sudah terdaftar"
+            : "Email sudah terdaftar",
+      });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await User.create({
       username,
@@ -12,6 +27,7 @@ exports.register = async (req, res) => {
       password: hashedPassword,
       role,
     });
+
     res.status(201).json({ message: "User registered", user });
   } catch (error) {
     res.status(500).json({ message: error.message });
